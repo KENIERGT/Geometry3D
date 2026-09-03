@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Enigma Geométrico - Búsqueda del Tesoro</title>
+    <style>
+        /* CSS: DISEÑO RESPONSIVO Y ESTILOS */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #e74c3c;
+            --accent-color: #27ae60;
+            --bg-color: #ecf0f1;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            width: 100%;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 { margin: 0; font-size: 1.8rem; }
+        header p { margin: 5px 0 0; opacity: 0.8; }
+
+        main {
+            max-width: 800px;
+            width: 90%;
+            margin: 20px 0;
+            padding-bottom: 40px;
+        }
+
+        #progreso {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        /* Rejilla de la Colección */
+        .album-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        /* Estilo de cada Cuerpo Geométrico */
+        .cuerpo-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            filter: grayscale(100%); /* Por defecto, en gris (no encontrado) */
+            opacity: 0.7;
+        }
+
+        /* Estado: Cuerpo Encontrado (se activa con JS) */
+        .cuerpo-card.encontrado {
+            filter: grayscale(0%);
+            opacity: 1;
+            border: 2px solid var(--accent-color);
+            transform: scale(1.03);
+            box-shadow: 0 4px 8px rgba(0,128,0,0.2);
+        }
+
+        .cuerpo-card img {
+            width: 100%;
+            height: 100px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .cuerpo-card h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+        }
+
+        .status-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.2rem;
+        }
+
+        /* Botón de Reset para el maestro */
+        #reset-btn {
+            margin-top: 30px;
+            padding: 10px 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        /* Media Queries para celulares muy pequeños */
+        @media (max-width: 400px) {
+            .album-grid { grid-template-columns: repeat(2, 1fr); }
+            header h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Enigma Geométrico</h1>
+    <p>Búsqueda del Tesoro Escolar</p>
+</header>
+
+<main>
+    <div id="progreso">
+        Cuerpos Coleccionados: <span id="cant-encontrados">0</span> / <span id="cant-total">0</span>
+    </div>
+
+    <div class="album-grid" id="album">
+        </div>
+
+    <div style="text-align: center;">
+        <button id="reset-btn" onclick="reiniciarColeccion()">Reiniciar Mi Colección (Maestro)</button>
+    </div>
+</main>
+
+<script>
+    // JAVASCRIPT: LÓGICA DEL JUEGO Y LOCALSTORAGE
+
+    // 1. Definición de la Base de Datos de Cuerpos (puedes añadir más aquí)
+    const cuerposBaseDatos = [
+        { id: 'cubo', nombre: 'Cubo', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Cube_isometric.svg/120px-Cube_isometric.svg.png' },
+        { id: 'esfera', nombre: 'Esfera', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sphere_wireframe.svg/120px-Sphere_wireframe.svg.png' },
+        { id: 'cilindro', nombre: 'Cilindro', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Cylinder_geometry.svg/120px-Cylinder_geometry.svg.png' },
+        { id: 'piramide', nombre: 'Pirámide Cuadrangular', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Pyramid_wireframe.svg/120px-Pyramid_wireframe.svg.png' },
+        { id: 'cono', nombre: 'Cono', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Cone_geometry.svg/120px-Cone_geometry.svg.png' },
+        { id: 'prisma', nombre: 'Prisma Triangular', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Prism_wireframe.svg/120px-Prism_wireframe.svg.png' }
+    ];
+
+    // 2. Estado de la colección (se carga de LocalStorage)
+    let coleccionUsuario = JSON.parse(localStorage.getItem('coleccionGeometrica')) || {};
+
+    // 3. Funciones Principales
+
+    function inicializarAlbum() {
+        const grid = document.getElementById('album');
+        const totalSpan = document.getElementById('cant-total');
+        totalSpan.innerText = cuerposBaseDatos.length;
+
+        grid.innerHTML = ''; // Limpiar
+
+        cuerposBaseDatos.forEach(cuerpo => {
+            const encontrado = coleccionUsuario[cuerpo.id];
+
+            // Crear la tarjeta HTML para cada cuerpo
+            const card = document.createElement('div');
+            card.className = `cuerpo-card ${encontrado ? 'encontrado' : ''}`;
+            card.id = `card-${cuerpo.id}`;
+
+            card.innerHTML = `
+                <div class="status-icon">${encontrado ? '✅' : '❓'}</div>
+                <img src="${cuerpo.img}" alt="${cuerpo.nombre}">
+                <h3>${cuerpo.nombre}</h3>
+            `;
+
+            grid.appendChild(card);
+        });
+
+        actualizarContador();
+    }
+
+    function actualizarContador() {
+        const cantEncontrados = Object.values(coleccionUsuario).filter(v => v === true).length;
+        document.getElementById('cant-encontrados').innerText = cantEncontrados;
+    }
+
+    // 4. Lógica de Escaneo: Leer la URL (ej: index.html?encontrado=cubo)
+    function verificarEscaneo() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const cuerpoEncontradoId = urlParams.get('encontrado');
+
+        if (cuerpoEncontradoId && !coleccionUsuario[cuerpoEncontradoId]) {
+            // Verificar si el ID existe en nuestra base de datos
+            if (cuerposBaseDatos.some(c => c.id === cuerpoEncontradoId)) {
+                
+                // 1. Guardar en el estado y LocalStorage
+                coleccionUsuario[cuerpoEncontradoId] = true;
+                localStorage.setItem('coleccionGeometrica', JSON.stringify(coleccionUsuario));
+
+                // 2. Avisar al estudiante
+                alert(`¡Felicidades! Has encontrado el cuerpo: ${cuerpoEncontradoId.toUpperCase()}`);
+
+                // 3. Redirigir a la URL limpia (sin el parámetro) para evitar loops
+                window.location.href = window.location.pathname;
+            }
+        }
+    }
+
+    // Función de reset (para el maestro)
+    function reiniciarColeccion() {
+        if(confirm("¿Estás seguro de que quieres borrar tu progreso? (Uso del maestro)")) {
+            localStorage.removeItem('coleccionGeometrica');
+            location.reload();
+        }
+    }
+
+    // 5. Ejecutar al cargar la página
+    verificarEscaneo(); // Primero ver si acaban de escanear
+    inicializarAlbum(); // Luego dibujar el álbum
+
+</script>
+
+</body>
+</html>
