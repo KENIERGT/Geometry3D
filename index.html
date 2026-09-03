@@ -3,231 +3,769 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>El Enigma Geométrico - Búsqueda del Tesoro</title>
+
+    <title>🗺️ Búsqueda del Tesoro Geométrico</title>
+
+    <!-- Librería para leer códigos QR -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
     <style>
-        /* CSS: DISEÑO RESPONSIVO Y ESTILOS */
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #e74c3c;
-            --accent-color: #27ae60;
-            --bg-color: #ecf0f1;
-            --card-bg: #ffffff;
-            --text-color: #333;
+        /* =========================================================
+           ESTILOS GENERALES
+        ========================================================= */
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: Arial, Helvetica, sans-serif;
+            background:
+                radial-gradient(circle at top, #e0f2fe 0%, #f8fafc 45%, #eef2ff 100%);
+            color: #1e293b;
+            min-height: 100vh;
         }
+
+        button {
+            font-family: inherit;
+        }
+
+        /* =========================================================
+           ENCABEZADO
+        ========================================================= */
 
         header {
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
             color: white;
-            width: 100%;
-            padding: 20px 0;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 25px 15px 30px;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
         }
 
-        header h1 { margin: 0; font-size: 1.8rem; }
-        header p { margin: 5px 0 0; opacity: 0.8; }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 5px;
+        }
+
+        header h1 {
+            font-size: clamp(1.5rem, 6vw, 2.3rem);
+            margin-bottom: 8px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        /* =========================================================
+           CONTENEDOR PRINCIPAL
+        ========================================================= */
 
         main {
-            max-width: 800px;
-            width: 90%;
-            margin: 20px 0;
-            padding-bottom: 40px;
+            width: min(100% - 24px, 850px);
+            margin: 0 auto;
+            padding: 22px 0 40px;
         }
 
-        #progreso {
-            background-color: var(--card-bg);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            text-align: center;
+        /* =========================================================
+           TARJETA DE PROGRESO
+        ========================================================= */
+
+        .progress-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
             margin-bottom: 20px;
+            box-shadow: 0 5px 18px rgba(15, 23, 42, 0.08);
+            text-align: center;
+        }
+
+        .progress-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+
+        .progress-number {
+            color: #2563eb;
+            font-size: 1.7rem;
             font-weight: bold;
         }
 
-        /* Rejilla de la Colección */
-        .album-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 15px;
-        }
-
-        /* Estilo de cada Cuerpo Geométrico */
-        .cuerpo-card {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 15px;
-            text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s;
-            position: relative;
-            filter: grayscale(100%); /* Por defecto, en gris (no encontrado) */
-            opacity: 0.7;
-        }
-
-        /* Estado: Cuerpo Encontrado (se activa con JS) */
-        .cuerpo-card.encontrado {
-            filter: grayscale(0%);
-            opacity: 1;
-            border: 2px solid var(--accent-color);
-            transform: scale(1.03);
-            box-shadow: 0 4px 8px rgba(0,128,0,0.2);
-        }
-
-        .cuerpo-card img {
+        .progress-bar {
             width: 100%;
-            height: 100px;
-            object-fit: contain;
-            margin-bottom: 10px;
+            height: 14px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 15px;
         }
 
-        .cuerpo-card h3 {
-            margin: 0;
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            border-radius: 20px;
+            transition: width 0.5s ease;
+        }
+
+        /* =========================================================
+           BOTÓN DE ESCANEAR
+        ========================================================= */
+
+        .scan-button {
+            width: 100%;
+            border: none;
+            border-radius: 18px;
+            padding: 17px 15px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
             font-size: 1.1rem;
-            color: var(--primary-color);
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(234, 88, 12, 0.25);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 20px;
         }
 
-        .status-icon {
+        .scan-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .scan-button:active {
+            transform: scale(0.98);
+        }
+
+        /* =========================================================
+           VISOR QR
+        ========================================================= */
+
+        #scanner-container {
+            display: none;
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 18px rgba(15, 23, 42, 0.12);
+        }
+
+        #reader {
+            width: 100%;
+        }
+
+        .close-scanner {
+            width: 100%;
+            border: none;
+            background: #475569;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* =========================================================
+           TÍTULO DE COLECCIÓN
+        ========================================================= */
+
+        .collection-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0 15px;
+        }
+
+        .collection-heading h2 {
+            font-size: 1.3rem;
+        }
+
+        /* =========================================================
+           GRID DE FIGURAS
+        ========================================================= */
+
+        .collection {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .shape-card {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            min-height: 210px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(15, 23, 42, 0.08);
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .shape-card.unlocked {
+            border-color: #86efac;
+        }
+
+        .shape-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .shape-visual {
+            height: 125px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .shape-card h3 {
+            font-size: 1rem;
+        }
+
+        .locked-text {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .check {
             position: absolute;
             top: 10px;
             right: 10px;
-            font-size: 1.2rem;
-        }
-
-        /* Botón de Reset para el maestro */
-        #reset-btn {
-            margin-top: 30px;
-            padding: 10px 20px;
-            background-color: var(--secondary-color);
+            background: #22c55e;
             color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
         }
 
-        /* Media Queries para celulares muy pequeños */
-        @media (max-width: 400px) {
-            .album-grid { grid-template-columns: repeat(2, 1fr); }
-            header h1 { font-size: 1.5rem; }
+        /* =========================================================
+           FIGURAS SVG
+        ========================================================= */
+
+        svg {
+            width: 115px;
+            height: 115px;
+        }
+
+        .locked-svg {
+            filter: grayscale(1) blur(2px);
+            opacity: 0.35;
+        }
+
+        /* =========================================================
+           MODAL DE TRIVIA
+        ========================================================= */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            z-index: 1000;
+            padding: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: min(100%, 500px);
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 25px;
+            padding: 22px;
+            animation: aparecer 0.25s ease;
+        }
+
+        @keyframes aparecer {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            text-align: center;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+
+        .modal-shape {
+            display: flex;
+            justify-content: center;
+            margin: 5px 0 15px;
+        }
+
+        .question {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-button {
+            border: 2px solid #cbd5e1;
+            background: white;
+            padding: 13px;
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+
+        .option-button:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .option-button.correct {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+
+        .option-button.incorrect {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+
+        .feedback {
+            display: none;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        .feedback.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .feedback.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .modal-close {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            border: none;
+            background: #64748b;
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* =========================================================
+           REINICIAR
+        ========================================================= */
+
+        .reset-section {
+            margin-top: 35px;
+            text-align: center;
+        }
+
+        .reset-button {
+            background: transparent;
+            border: 1px solid #94a3b8;
+            color: #64748b;
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .reset-button:hover {
+            background: #f1f5f9;
+        }
+
+        /* =========================================================
+           MENSAJE INFORMATIVO
+        ========================================================= */
+
+        .info {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-top: 20px;
+        }
+
+        /* =========================================================
+           TABLETS / PC
+        ========================================================= */
+
+        @media (min-width: 600px) {
+            .collection {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .shape-card {
+                min-height: 230px;
+            }
         }
     </style>
 </head>
+
 <body>
 
 <header>
-    <h1>Enigma Geométrico</h1>
-    <p>Búsqueda del Tesoro Escolar</p>
+    <div class="logo">🗺️</div>
+    <h1>Búsqueda del Tesoro Geométrico</h1>
+    <p>¡Encuentra los códigos QR y completa tu colección!</p>
 </header>
 
 <main>
-    <div id="progreso">
-        Cuerpos Coleccionados: <span id="cant-encontrados">0</span> / <span id="cant-total">0</span>
-    </div>
 
-    <div class="album-grid" id="album">
+    <!-- PROGRESO -->
+    <section class="progress-card">
+        <div class="progress-title">
+            🏆 Tu progreso
         </div>
 
-    <div style="text-align: center;">
-        <button id="reset-btn" onclick="reiniciarColeccion()">Reiniciar Mi Colección (Maestro)</button>
+        <div class="progress-number" id="progressText">
+            Cuerpos Coleccionados: 0 / 6
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </section>
+
+
+    <!-- BOTÓN PARA ABRIR LA CÁMARA -->
+    <button class="scan-button" onclick="abrirScanner()">
+        📷 Activar Cámara para Escanear
+    </button>
+
+
+    <!-- VISOR DEL ESCÁNER -->
+    <section id="scanner-container">
+
+        <div id="reader"></div>
+
+        <button class="close-scanner" onclick="cerrarScanner()">
+            ✖ Cerrar cámara
+        </button>
+
+    </section>
+
+
+    <!-- COLECCIÓN -->
+    <div class="collection-heading">
+        <h2>📚 Mi Colección</h2>
     </div>
+
+    <section class="collection" id="collection">
+        <!-- Las tarjetas se generan mediante JavaScript -->
+    </section>
+
+
+    <p class="info">
+        🔎 Busca los códigos QR colocados por tu maestro en diferentes lugares
+        de la escuela.<br>
+        Cada código contiene una figura geométrica diferente.
+    </p>
+
+
+    <!-- BOTÓN DE RESET -->
+    <div class="reset-section">
+        <button class="reset-button" onclick="reiniciarColeccion()">
+            🔄 Reiniciar Colección
+        </button>
+    </div>
+
 </main>
 
+
+<!-- =============================================================
+     MODAL DE TRIVIA
+============================================================= -->
+
+<div class="modal" id="triviaModal">
+
+    <div class="modal-content">
+
+        <h2 class="modal-title" id="modalTitle">
+            ¡Nuevo cuerpo encontrado!
+        </h2>
+
+        <div class="modal-shape" id="modalShape"></div>
+
+        <div class="question" id="questionText"></div>
+
+        <div class="options" id="optionsContainer"></div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <button
+            class="modal-close"
+            id="modalClose"
+            onclick="cerrarModal()"
+            style="display:none;">
+            Continuar
+        </button>
+
+    </div>
+
+</div>
+
+
 <script>
-    // JAVASCRIPT: LÓGICA DEL JUEGO Y LOCALSTORAGE
 
-    // 1. Definición de la Base de Datos de Cuerpos (puedes añadir más aquí)
-    const cuerposBaseDatos = [
-        { id: 'cubo', nombre: 'Cubo', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Cube_isometric.svg/120px-Cube_isometric.svg.png' },
-        { id: 'esfera', nombre: 'Esfera', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sphere_wireframe.svg/120px-Sphere_wireframe.svg.png' },
-        { id: 'cilindro', nombre: 'Cilindro', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Cylinder_geometry.svg/120px-Cylinder_geometry.svg.png' },
-        { id: 'piramide', nombre: 'Pirámide Cuadrangular', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Pyramid_wireframe.svg/120px-Pyramid_wireframe.svg.png' },
-        { id: 'cono', nombre: 'Cono', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Cone_geometry.svg/120px-Cone_geometry.svg.png' },
-        { id: 'prisma', nombre: 'Prisma Triangular', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Prism_wireframe.svg/120px-Prism_wireframe.svg.png' }
-    ];
+    /* ============================================================
+       CONFIGURACIÓN DE LAS FIGURAS
+    ============================================================ */
 
-    // 2. Estado de la colección (se carga de LocalStorage)
-    let coleccionUsuario = JSON.parse(localStorage.getItem('coleccionGeometrica')) || {};
+    const figuras = {
 
-    // 3. Funciones Principales
+        cubo: {
+            nombre: "Cubo",
+            color: "#2563eb",
 
-    function inicializarAlbum() {
-        const grid = document.getElementById('album');
-        const totalSpan = document.getElementById('cant-total');
-        totalSpan.innerText = cuerposBaseDatos.length;
+            pregunta:
+                "¿Cuál es la fórmula para calcular el volumen de un cubo?",
 
-        grid.innerHTML = ''; // Limpiar
+            opciones: [
+                "A) V = a³",
+                "B) V = 2a",
+                "C) V = πr²h"
+            ],
 
-        cuerposBaseDatos.forEach(cuerpo => {
-            const encontrado = coleccionUsuario[cuerpo.id];
+            respuesta: 0
+        },
 
-            // Crear la tarjeta HTML para cada cuerpo
-            const card = document.createElement('div');
-            card.className = `cuerpo-card ${encontrado ? 'encontrado' : ''}`;
-            card.id = `card-${cuerpo.id}`;
+        esfera: {
+            nombre: "Esfera",
+            color: "#ef4444",
 
-            card.innerHTML = `
-                <div class="status-icon">${encontrado ? '✅' : '❓'}</div>
-                <img src="${cuerpo.img}" alt="${cuerpo.nombre}">
-                <h3>${cuerpo.nombre}</h3>
-            `;
+            pregunta:
+                "¿Cuál es la fórmula para calcular el volumen de una esfera?",
 
-            grid.appendChild(card);
-        });
+            opciones: [
+                "A) V = πr²h",
+                "B) V = 4/3 · π · r³",
+                "C) V = a³"
+            ],
 
-        actualizarContador();
-    }
+            respuesta: 1
+        },
 
-    function actualizarContador() {
-        const cantEncontrados = Object.values(coleccionUsuario).filter(v => v === true).length;
-        document.getElementById('cant-encontrados').innerText = cantEncontrados;
-    }
+        cilindro: {
+            nombre: "Cilindro",
+            color: "#16a34a",
 
-    // 4. Lógica de Escaneo: Leer la URL (ej: index.html?encontrado=cubo)
-    function verificarEscaneo() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const cuerpoEncontradoId = urlParams.get('encontrado');
+            pregunta:
+                "Para desbloquear el Cilindro, responde: ¿Cuál es la fórmula para calcular su volumen?",
 
-        if (cuerpoEncontradoId && !coleccionUsuario[cuerpoEncontradoId]) {
-            // Verificar si el ID existe en nuestra base de datos
-            if (cuerposBaseDatos.some(c => c.id === cuerpoEncontradoId)) {
-                
-                // 1. Guardar en el estado y LocalStorage
-                coleccionUsuario[cuerpoEncontradoId] = true;
-                localStorage.setItem('coleccionGeometrica', JSON.stringify(coleccionUsuario));
+            opciones: [
+                "A) V = π · r² · h",
+                "B) V = 2 · π · r · h",
+                "C) V = π · r · h²"
+            ],
 
-                // 2. Avisar al estudiante
-                alert(`¡Felicidades! Has encontrado el cuerpo: ${cuerpoEncontradoId.toUpperCase()}`);
+            respuesta: 0
+        },
 
-                // 3. Redirigir a la URL limpia (sin el parámetro) para evitar loops
-                window.location.href = window.location.pathname;
-            }
+        piramide: {
+            nombre: "Pirámide Cuadrangular",
+            color: "#9333ea",
+
+            pregunta:
+                "¿Cuál es la fórmula general para calcular el volumen de una pirámide?",
+
+            opciones: [
+                "A) V = Ab · h",
+                "B) V = (Ab · h) / 3",
+                "C) V = 2 · Ab · h"
+            ],
+
+            respuesta: 1
+        },
+
+        cono: {
+            nombre: "Cono",
+            color: "#f97316",
+
+            pregunta:
+                "¿Cuál es la fórmula para calcular el volumen de un cono?",
+
+            opciones: [
+                "A) V = π · r² · h",
+                "B) V = 4/3 · π · r³",
+                "C) V = (π · r² · h) / 3"
+            ],
+
+            respuesta: 2
+        },
+
+        prisma: {
+            nombre: "Prisma Triangular",
+            color: "#0891b2",
+
+            pregunta:
+                "¿Cómo se calcula el volumen de un prisma?",
+
+            opciones: [
+                "A) V = área de la base · altura",
+                "B) V = área de la base / altura",
+                "C) V = 3 · área de la base"
+            ],
+
+            respuesta: 0
         }
-    }
 
-    // Función de reset (para el maestro)
-    function reiniciarColeccion() {
-        if(confirm("¿Estás seguro de que quieres borrar tu progreso? (Uso del maestro)")) {
-            localStorage.removeItem('coleccionGeometrica');
-            location.reload();
-        }
-    }
+    };
 
-    // 5. Ejecutar al cargar la página
-    verificarEscaneo(); // Primero ver si acaban de escanear
-    inicializarAlbum(); // Luego dibujar el álbum
 
-</script>
+    /* ============================================================
+       ESTADO DEL JUEGO
+    ============================================================ */
 
-</body>
-</html>
+    let coleccion = JSON.parse(
+        localStorage.getItem("tesoroGeometrico")
+    ) || [];
+
+    let scanner = null;
+
+    let figuraActual = null;
+
+
+    /* ============================================================
+       SVG DE LAS FIGURAS
+       Se utilizan SVG inline para evitar imágenes externas.
+    ============================================================ */
+
+    function obtenerSVG(id, bloqueado = false) {
+
+        const clase = bloqueado ? "locked-svg" : "";
+
+        switch (id) {
+
+            case "cubo":
+
+                return `
+                <svg viewBox="0 0 120 120" class="${clase}">
+                    <polygon
+                        points="30,40 70,20 105,40 65,60"
+                        fill="#60a5fa"
+                        stroke="#1e3a8a"
+                        stroke-width="3"/>
+                    <polygon
+                        points="30,40 65,60 65,100 30,80"
+                        fill="#2563eb"
+                        stroke="#1e3a8a"
+                        stroke-width="3"/>
+                    <polygon
+                        points="65,60 105,40 105,80 65,100"
+                        fill="#1d4ed8"
+                        stroke="#1e3a8a"
+                        stroke-width="3"/>
+                </svg>
+                `;
+
+
+            case "esfera":
+
+                return `
+                <svg viewBox="0 0 120 120" class="${clase}">
+                    <circle
+                        cx="60"
+                        cy="60"
+                        r="42"
+                        fill="#ef4444"
+                        stroke="#991b1b"
+                        stroke-width="3"/>
+                    <ellipse
+                        cx="45"
+                        cy="43"
+                        rx="13"
+                        ry="8"
+                        fill="#fecaca"
+                        opacity="0.8"/>
+                </svg>
+                `;
+
+
+            case "cilindro":
+
+                return `
+                <svg viewBox="0 0 120 120" class="${clase}">
+                    <ellipse
+                        cx="60"
+                        cy="30"
+                        rx="38"
+                        ry="13"
+                        fill="#4ade80"
+                        stroke="#166534"
+                        stroke-width="3"/>
+                    <rect
+                        x="22"
+                        y="30"
+                        width="76"
+                        height="58"
+                        fill="#16a34a"
+                        stroke="#166534"
+                        stroke-width="3"/>
+                    <ellipse
+                        cx="60"
+                        cy="88"
+                        rx="38"
+                        ry="13"
+                        fill="#15803d"
+                        stroke="#166534"
+                        stroke-width="3"/>
+                    <ellipse
+                        cx="60"
+                        cy="30"
+                        rx="38"
+                        ry="13"
+                        fill="#4ade80"
+                        stroke="#166534"
+                        stroke-width="3"/>
+                </svg>
+                `;
+
+
+            case "piramide":
+
+                return `
+                <svg viewBox="0 0 120 120" class="${clase}">
+                    <polygon
+                        points="60,15 20,85 60,100 100,85"
+                        fill="#c084fc"
+                        stroke="#581c87"
+                        stroke-width="3"/>
+                    <polygon
+                        points="60,15 20,85 60,100"
+                        fill="#9333ea"
+                        stroke="#581c87"
+                        stroke-width="3"/>
+                    <polygon
+                        poin
